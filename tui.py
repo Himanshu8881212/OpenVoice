@@ -927,7 +927,7 @@ class OpenVoiceTUI(App):
         if self.backend:
             # Refresh chat list
             self._refresh_chat_list()
-            self._add_system_message("Ready! Hold OPTION=voice, CTRL=camera, or type.")
+            self._add_system_message(f"Ready! HAS_PYNPUT={HAS_PYNPUT}. Hold OPTION=voice, CTRL=camera, or type.")
         else:
             self._add_system_message("Demo mode - no backend loaded.")
             
@@ -1068,14 +1068,17 @@ class OpenVoiceTUI(App):
         
         def on_press(key):
             try:
+                # Debugging: show all keys if needed, uncomment next line to see ALL keys
+                # self.call_from_thread(self._add_system_message, f"Key pressed: {key}")
+                
                 if key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
                     if self.backend and self.backend.start_recording():
                         self.call_from_thread(self._on_recording_start)
                 elif key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
                     if self.backend and self.backend.start_video():
                         self.call_from_thread(self._on_video_start)
-            except Exception:
-                pass
+            except Exception as e:
+                self.call_from_thread(self._add_system_message, f"Listener Error: {e}")
         
         def on_release(key):
             try:
