@@ -272,13 +272,47 @@ ChatListItem.--highlight {
     layout: vertical;
 }
 
+#attachment-label {
+    height: 1;
+    color: #58a6ff;
+    margin-bottom: 1;
+    display: none;
+    content-align: left middle;
+}
+
+#attachment-label.--visible {
+    display: block;
+}
+
+#input-row {
+    height: 3;
+    layout: horizontal;
+    align: left middle;
+    margin-bottom: 1;
+}
+
 #user-input {
-    width: 100%;
+    width: 1fr;
     height: 3;
     background: #0d1117;
     border: solid #30363d;
     color: #c9d1d9;
-    margin-bottom: 1;
+    margin-right: 1;
+}
+
+#attach-btn {
+    width: 5;
+    height: 3;
+    min-width: 5;
+    background: #21262d;
+    border: solid #30363d;
+    color: #c9d1d9;
+    padding: 0;
+    content-align: center middle;
+}
+
+#attach-btn:hover {
+    background: #30363d;
 }
 
 #status-bar {
@@ -825,6 +859,8 @@ class OpenVoiceTUI(App):
         Binding("ctrl+d", "delete_chat", "Delete Chat", show=True),
     ]
     
+    attached_image_path = reactive("")
+
     def __init__(self, args, backend=None):
         super().__init__()
         self.args = args
@@ -854,7 +890,10 @@ class OpenVoiceTUI(App):
                 yield ScrollableContainer(id="chat-container")
                 
                 with Vertical(id="input-area"):
-                    yield Input(placeholder="Type message and press Enter...", id="user-input")
+                    yield Label("", id="attachment-label")
+                    with Horizontal(id="input-row"):
+                        yield Input(placeholder="Type message and press Enter...", id="user-input")
+                        yield Button("📎", id="attach-btn", variant="primary")
                     yield StatusBar(id="status-bar")
     
     def on_mount(self):
@@ -894,6 +933,9 @@ class OpenVoiceTUI(App):
             
         elif btn_id == "mute-btn":
             self.action_toggle_mute()
+            
+        elif btn_id == "attach-btn":
+            self.action_attach_image()
             
         elif btn_id.startswith("del-"):
             # Delete specific chat
@@ -978,6 +1020,26 @@ class OpenVoiceTUI(App):
                 btn.label = "Mute Audio"
                 btn.remove_class("--muted")
                 self._add_system_message("Audio unmuted.")
+
+    def action_attach_image(self):
+        """Manually attach an image using Mac file picker."""
+        import subprocess
+        
+        # AppleScript to choose an image file
+        script = 'POSIX path of (choose file with prompt "Select an image to attach:" of type {"public.image"})'
+        try:
+            # We run this in a separate process to avoid blocking the TUI event loop
+            result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
+            if result.returncode == 0:
+                path = result.stdout.strip()
+                if path and os.path.exists(path):
+                    self.attached_image_path = path
+                    label = self.query_one("#attachment-label", Label)
+                    label.update(f"📎 Attached: {os.path.basename(path)}")
+                    label.add_class("--visible")
+                    self._update_status(f"Attached: {os.path.basename(path)}")
+        except Exception as e:
+            self._add_system_message(f"Error selecting image: {e}")
 
     def _start_pynput_listener(self):
         """Start pynput keyboard listener for PTT."""
@@ -1125,7 +1187,7 @@ class OpenVoiceTUI(App):
     async def on_input_submitted(self, event: Input.Submitted):
         """Handle text input submission."""
         user_input = event.value.strip()
-        if not user_input:
+        if not user_input and not self.attached_image_path:
             return
         
         event.input.value = ""
@@ -1134,22 +1196,26 @@ class OpenVoiceTUI(App):
             self.exit()
             return
         
-        # Manual record command
-        if user_input.lower() in ('r', 'record'):
-            self._add_system_message("Use OPTION key to record, or type your message")
-            return
-        
-        # Manual video command
-        if user_input.lower() in ('v', 'video'):
-            self._add_system_message("Use CTRL key to record video, or type your message")
-            return
-        
+        image_b64 = None
+        if self.attached_image_path:
+            try:
+                with open(self.attached_image_path, "rb") as f:
+                    image_b64 = base64.b64encode(f.read()).decode()
+            except Exception as e:
+                self._add_system_message(f"Error reading image: {e}")
+            
+            # Reset attachment UI
+            self.attached_image_path = ""
+            label = self.query_one("#attachment-label", Label)
+            label.update("")
+            label.remove_class("--visible")
+
         # Regular text input
-        self._add_user_message(user_input)
-        self._process_text_input(user_input)
+        self._add_user_message(user_input if user_input else "[Image Attached]")
+        self._process_text_input(user_input, image_b64=image_b64)
     
     @work(thread=True)
-    def _process_text_input(self, text: str):
+    def _process_text_input(self, text: str, image_b64: str = None):
         """Process text input in background."""
         if not self.backend:
             self.call_from_thread(self._add_system_message, "Backend not ready")
@@ -1163,7 +1229,7 @@ class OpenVoiceTUI(App):
             full_response += token
             self.call_from_thread(self._update_ai_response, full_response)
         
-        self.backend.chat(text, on_token=on_token)
+        self.backend.chat(text, image_b64=image_b64, on_token=on_token)
         self.call_from_thread(self._finish_ai_response)
         self.call_from_thread(self._refresh_chat_list)  # Update list for title change/new chat
 
