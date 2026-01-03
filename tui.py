@@ -578,21 +578,12 @@ class OpenVoiceBackend:
             if self.is_recording or self.is_recording_video:
                 self.audio_chunks.append(indata.copy())
     
-    def _clean_for_speech(self, text: str) -> str:
-        """Strip tags like [laugh] from text for TTS. Only square brackets."""
-        import re
-        # Remove only [tag] patterns
-        text = re.sub(r'\[.*?\]', '', text)
-        return text.strip()
-    
     def speak(self, text):
-        """Queue text for TTS, cleaning tags first."""
+        """Queue text for TTS."""
         if self.is_muted:
             return
-        
-        speech_text = self._clean_for_speech(text)
-        if speech_text:
-            self.tts_queue.put(speech_text)
+        if text and text.strip():
+            self.tts_queue.put(text)
     
     def transcribe(self, audio):
         """Speech to text."""
