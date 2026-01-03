@@ -26,6 +26,7 @@ os.environ["TQDM_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
 os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "1"
+os.environ["OPENCV_FOR_THREADS_NUM"] = "1"
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -292,6 +293,7 @@ ChatListItem.--highlight {
 /* Messages */
 .user-message {
     width: 85%;
+    height: auto;
     color: #f0f6fc;
     background: #0d47a1;
     padding: 1 2;
@@ -300,6 +302,7 @@ ChatListItem.--highlight {
 }
 .ai-message {
     width: 85%;
+    height: auto;
     color: #c9d1d9;
     background: #1c2128;
     padding: 1 2;
@@ -327,14 +330,14 @@ OPENCLI_BANNER = """
 # ═══════════════════════════════════════════════════════════════════════════════
 from textual.widget import Widget
 
-class ChatMessage(Widget):
+class ChatMessage(Static):
     """A single chat message widget."""
     
     def __init__(self, sender: str, content: str, msg_type: str = "user"):
-        super().__init__()
-        self.sender = sender
-        self.content = content
         self.msg_type = msg_type
+        # Clean text for AI messages immediately
+        display_content = self._clean_text(content) if msg_type == "ai" else content
+        super().__init__(display_content)
         self.add_class(f"{msg_type}-message")
 
     def _clean_text(self, text: str) -> str:
@@ -342,25 +345,12 @@ class ChatMessage(Widget):
         import re
         return re.sub(r'\[.*?\]', '', text).strip()
     
-    def compose(self) -> ComposeResult:
-        display_content = self._clean_text(self.content) if self.msg_type == "ai" else self.content
-        if not display_content and self.msg_type == "ai":
-             return
-             
-        yield Static(display_content, id="msg-text")
-    
     def update_content(self, new_content: str):
         """Update message content for streaming."""
-        self.content = new_content
         display_content = self._clean_text(new_content) if self.msg_type == "ai" else new_content
         if not display_content and self.msg_type == "ai":
             return
-            
-        try:
-            static = self.query_one("#msg-text", Static)
-            static.update(display_content)
-        except Exception:
-            pass
+        self.update(display_content)
 
 
 class StatusBar(Static):
