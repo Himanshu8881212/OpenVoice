@@ -651,12 +651,14 @@ class OpenVoiceBackend:
             if text is None:
                 break
             try:
+                # Debug: Print the text being sent to TTS
+                print(f"[TTS DEBUG] Speaking: {text}")
                 for res in self.tts.generate(text=text, ref_audio=self.ref_audio, verbose=False, stream=True):
                     if hasattr(res, 'audio') and res.audio is not None:
                         mx.eval(res.audio)
                         self.player.queue_audio(res.audio)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[TTS DEBUG] Error: {e}")
     
     def _audio_callback(self, indata, frames, time_info, status):
         """Audio stream callback."""
