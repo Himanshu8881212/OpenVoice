@@ -1,0 +1,27 @@
+# OpenVoice TUI Dependencies
+# Mac-optimized voice assistant with Textual TUI
+
+# Core ML/AI frameworks (Apple Silicon optimized)
+mlx>=0.20.0
+mlx-audio>=0.2.0
+parakeet-mlx>=0.1.0
+
+# TUI Framework
+textual>=0.47.0
+rich>=13.0.0
+
+# Audio
+sounddevice>=0.4.6
+numpy>=1.24.0
+
+# HTTP requests for LLM API
+requests>=2.28.0
+
+# Keyboard shortcuts (push-to-talk)
+pynput>=1.7.6
+
+# Video capture (optional)
+opencv-python>=4.8.0
+
+# Tokenizers (for LLM)
+tokenizers>=0.15.0
