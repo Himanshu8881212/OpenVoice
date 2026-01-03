@@ -52,16 +52,22 @@ python tui.py --demo
 
 ## Configuration
 
-```bash
-python tui.py --help
+You can manually change the models by passing arguments when starting the application:
 
-Options:
-  --stt-model    STT model (default: mlx-community/parakeet-tdt-0.6b-v3)
-  --tts-model    TTS model (default: mlx-community/chatterbox-turbo-fp16)
-  --llm-url      LLM API URL (default: http://localhost:1234/v1)
-  --ref-audio    Reference audio for voice cloning (default: reference.wav)
-  --demo         Run without loading models
+```bash
+# Example: Use a different STT or TTS model
+python tui.py --stt-model "mlx-community/whisper-large-v3-turbo" --tts-model "mlx-community/chatterbox-turbo-fp16"
 ```
+
+### Command Line Options
+
+| Option | Default | Description |
+| :--- | :--- | :--- |
+| `--stt-model` | `mlx-community/parakeet-tdt-0.6b-v3` | MLX-optimized ASR model for voice recognition |
+| `--tts-model` | `mlx-community/chatterbox-turbo-fp16` | MLX-optimized TTS model for voice output |
+| `--llm-url` | `http://localhost:1234/v1` | URL for the LLM API server |
+| `--ref-audio` | `reference.wav` | Reference audio file for voice cloning |
+| `--demo` | - | Run without loading models (UI-only mode) |
 
 ## License
 
