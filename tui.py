@@ -274,10 +274,11 @@ ChatListItem.--highlight {
 
 #attachment-label {
     height: 1;
-    color: #58a6ff;
-    margin-bottom: 1;
+    color: #8b949e;
+    margin-bottom: 0;
     display: none;
-    content-align: left middle;
+    content-align: right middle;
+    font-size: 9;
 }
 
 #attachment-label.--visible {
@@ -288,7 +289,22 @@ ChatListItem.--highlight {
     height: 3;
     layout: horizontal;
     align: left middle;
-    margin-bottom: 1;
+}
+
+#attach-btn {
+    width: 6;
+    height: 3;
+    min-width: 6;
+    background: #0d1117;
+    border: solid #30363d;
+    border-right: none;
+    color: #8b949e;
+    padding: 0;
+    content-align: center middle;
+}
+
+#attach-btn:hover {
+    color: #58a6ff;
 }
 
 #user-input {
@@ -297,22 +313,6 @@ ChatListItem.--highlight {
     background: #0d1117;
     border: solid #30363d;
     color: #c9d1d9;
-    margin-right: 1;
-}
-
-#attach-btn {
-    width: 5;
-    height: 3;
-    min-width: 5;
-    background: #21262d;
-    border: solid #30363d;
-    color: #c9d1d9;
-    padding: 0;
-    content-align: center middle;
-}
-
-#attach-btn:hover {
-    background: #30363d;
 }
 
 #status-bar {
@@ -890,10 +890,10 @@ class OpenVoiceTUI(App):
                 yield ScrollableContainer(id="chat-container")
                 
                 with Vertical(id="input-area"):
-                    yield Label("", id="attachment-label")
                     with Horizontal(id="input-row"):
+                        yield Button("📎", id="attach-btn")
                         yield Input(placeholder="Type message and press Enter...", id="user-input")
-                        yield Button("📎", id="attach-btn", variant="primary")
+                    yield Label("", id="attachment-label")
                     yield StatusBar(id="status-bar")
     
     def on_mount(self):
