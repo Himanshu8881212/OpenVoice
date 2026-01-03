@@ -59,11 +59,16 @@ sys.stderr = _stderr
 # Textual imports
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, ScrollableContainer
-from textual.widgets import Static, Input
+from textual.containers import Container, ScrollableContainer, Horizontal, Vertical
+from textual.widgets import Static, Input, ListView, ListItem, Button, Label
 from textual.reactive import reactive
+from textual.message import Message
 from textual import work
 from rich.text import Text
+
+import uuid
+from datetime import datetime
+import glob
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Config
@@ -104,85 +109,213 @@ Screen {
     background: #0d1117;
 }
 
-#app-container {
+#main-layout {
+    layout: horizontal;
+    height: 1fr;
+}
+
+/* Sidebar Area */
+#sidebar {
+    width: 32;
     height: 100%;
-    width: 100%;
+    background: #161b22;
+    border-right: solid #30363d;
     layout: vertical;
 }
 
-#header-banner {
-    height: 8;
-    content-align: center middle;
+#app-header {
+    width: 100%;
+    height: auto;
     background: #161b22;
+    border-bottom: solid #30363d;
+    content-align: center middle;
+    padding: 2 0;
+    margin: 0;
+}
+
+.sidebar-title {
+    display: none;
+}
+
+#new-chat-container {
+    height: auto;
+    padding: 1;
+    content-align: center middle;
+}
+
+#new-chat-btn {
+    width: 100%;
+    height: 3;
+    background: #238636;
+    color: white;
+    margin-bottom: 1;
+}
+
+#mute-btn {
+    width: 100%;
+    height: 3;
+    background: #30363d;
+    color: white;
+}
+
+#mute-btn.--muted {
+    background: #d29922;
+}
+
+#chat-list {
+    height: 1fr;
+    background: #161b22;
+    scrollbar-size: 1 1;
+}
+
+/* Chat Items */
+ChatListItem {
+    height: 4;
+    background: #161b22;
+    border-bottom: solid #1c2128;
+    layout: horizontal;
+    align: left middle;
+    padding: 0 1;
+    margin: 0;
+}
+
+ChatListItem:hover {
+    background: #161b22;
+}
+
+ChatListItem:focus {
+    background: #161b22;
+}
+
+
+
+ChatListItem.--highlight {
+    border-left: solid #c9a0ff;
+    background: #1c2128;
+}
+
+.chat-item-info {
+    width: 1fr;
+    height: auto;
+    layout: vertical;
+}
+
+.chat-item-title {
+    color: #c9d1d9;
+    text-style: bold;
+    margin-bottom: 0;
+    height: 1;
+}
+
+.chat-item-date {
+    color: #8b949e;
+    text-style: dim;
+    height: 1;
+}
+
+.delete-btn {
+    width: 3;
+    height: 1;
+    min-width: 3;
+    color: #8b949e;
+    background: transparent;
+    border: none;
+    padding: 0;
+    content-align: center middle;
+    margin-right: 2;
+}
+
+.delete-btn:hover {
+    color: #f85149;
+    background: #30363d;
+}
+
+/* Main Content Area */
+#chat-area {
+    width: 1fr;
+    height: 100%;
+    layout: vertical;
+}
+
+#banner-label {
+    width: 100%;
     color: #c9a0ff;
+    text-align: center;
 }
 
 #chat-container {
     height: 1fr;
-    border: solid #30363d;
-    padding: 1;
-    overflow-y: auto;
     background: #0d1117;
+    padding: 1 4;
+    overflow-y: auto;
+    scrollbar-size: 1 1;
+    align: center top;
 }
 
-.user-message {
-    margin-bottom: 1;
-    color: #58a6ff;
-}
-
-.ai-message {
-    margin-bottom: 1;
-    color: #c9a0ff;
-}
-
-.system-message {
-    margin-bottom: 1;
-    color: #8b949e;
-}
-
-#input-container {
+#input-area {
     height: auto;
-    min-height: 4;
-    padding: 1 2;
     background: #161b22;
     border-top: solid #30363d;
+    padding: 1 2;
+    layout: vertical;
 }
 
 #user-input {
     width: 100%;
     height: 3;
-    background: #21262d;
-    color: #c9d1d9;
+    background: #0d1117;
     border: solid #30363d;
+    color: #c9d1d9;
+    margin-bottom: 1;
 }
 
 #status-bar {
-    height: 2;
-    background: #161b22;
+    height: 1;
+    background: transparent;
     color: #8b949e;
-    padding: 0 1;
-    content-align: center middle;
     text-align: center;
 }
 
 .status-listening {
-    background: #238636;
-    color: #ffffff;
+    color: #3fb950;
+    text-style: bold;
 }
 
 .status-camera {
-    background: #9e6a03;
-    color: #ffffff;
+    color: #d29922;
+    text-style: bold;
+}
+
+/* Messages */
+.user-message {
+    width: 90%;
+    color: #f0f6fc;
+    background: #0d47a1;
+    padding: 1 2;
+    border-left: solid #58a6ff;
+    margin-bottom: 1;
+}
+.ai-message {
+    width: 90%;
+    color: #c9d1d9;
+    background: #1c2128;
+    padding: 1 2;
+    border-left: solid #c9a0ff;
+    margin-bottom: 1;
+}
+
+.system-message {
+    display: none;
 }
 """
 
-OPENVOICE_BANNER = """
- ██████╗ ██████╗ ███████╗███╗   ██╗██╗   ██╗ ██████╗ ██╗ ██████╗███████╗
-██╔═══██╗██╔══██╗██╔════╝████╗  ██║██║   ██║██╔═══██╗██║██╔════╝██╔════╝
-██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║   ██║██║   ██║██║██║     █████╗  
-██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║╚██╗ ██╔╝██║   ██║██║██║     ██╔══╝  
-╚██████╔╝██║     ███████╗██║ ╚████║ ╚████╔╝ ╚██████╔╝██║╚██████╗███████╗
- ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝  ╚═══╝   ╚═════╝ ╚═╝ ╚═════╝╚══════╝
+OPENCLI_BANNER = """
+██████╗ ██████╗ ███████╗███╗   ██╗ ██████╗██╗     ██╗
+██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██║     ██║
+██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║     ██║     ██║
+██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║     ██║     ██║
+╚██████╔╝██║     ███████╗██║ ╚████║╚██████╗███████╗██║
+ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝
 """
 
 
@@ -198,32 +331,29 @@ class ChatMessage(Static):
         self.content = content
         self.msg_type = msg_type
         self.add_class(f"{msg_type}-message")
+
+    def _clean_text(self, text: str) -> str:
+        """Strip performance markers like [laugh] or [clear throat]."""
+        import re
+        return re.sub(r'\[.*?\]', '', text).strip()
     
     def compose(self) -> ComposeResult:
-        text = Text()
-        if self.msg_type == "user":
-            text.append(f"{self.sender}: ", style="bold #58a6ff")
-        elif self.msg_type == "ai":
-            text.append(f"{self.sender}: ", style="bold #c9a0ff")
-        else:
-            text.append(f"{self.sender}: ", style="dim")
-        text.append(self.content)
-        yield Static(text)
+        display_content = self._clean_text(self.content) if self.msg_type == "ai" else self.content
+        if not display_content and self.msg_type == "ai":
+             return
+             
+        yield Static(display_content)
     
     def update_content(self, new_content: str):
         """Update message content for streaming."""
         self.content = new_content
+        display_content = self._clean_text(new_content) if self.msg_type == "ai" else new_content
+        if not display_content and self.msg_type == "ai":
+            return
+            
         try:
             static = self.query_one(Static)
-            text = Text()
-            if self.msg_type == "user":
-                text.append(f"{self.sender}: ", style="bold #58a6ff")
-            elif self.msg_type == "ai":
-                text.append(f"{self.sender}: ", style="bold #c9a0ff")
-            else:
-                text.append(f"{self.sender}: ", style="dim")
-            text.append(new_content)
-            static.update(text)
+            static.update(display_content)
         except Exception:
             pass
 
@@ -278,12 +408,91 @@ class StatusBar(Static):
 # ═══════════════════════════════════════════════════════════════════════════════
 # Backend (Audio/Video/LLM)
 # ═══════════════════════════════════════════════════════════════════════════════
+class ChatManager:
+    """Manages chat history and persistence."""
+    
+    def __init__(self, storage_dir="chats"):
+        self.storage_dir = storage_dir
+        if not os.path.exists(storage_dir):
+            os.makedirs(storage_dir)
+            
+    def list_chats(self):
+        """List all available chats sorted by recent."""
+        chats = []
+        for filepath in glob.glob(os.path.join(self.storage_dir, "*.json")):
+            try:
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
+                    chats.append({
+                        "id": data.get("id"),
+                        "title": data.get("title", "Untitled Chat"),
+                        "timestamp": data.get("timestamp_last", 0),
+                        "filename": filepath
+                    })
+            except:
+                pass
+        return sorted(chats, key=lambda x: x["timestamp"], reverse=True)
+
+    def load_chat(self, chat_id):
+        """Load a specific chat."""
+        filepath = os.path.join(self.storage_dir, f"{chat_id}.json")
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as f:
+                return json.load(f)
+        return None
+
+    def save_chat(self, chat_id, messages):
+        """Save chat to file."""
+        if not messages:
+            return
+            
+        filepath = os.path.join(self.storage_dir, f"{chat_id}.json")
+        
+        # Determine title from first user message if possible
+        title = "New Chat"
+        for msg in messages:
+            if msg["role"] == "user":
+                title = msg["content"][:30] + "..." if len(msg["content"]) > 30 else msg["content"]
+                break
+        
+        data = {
+            "id": chat_id,
+            "title": title,
+            "timestamp_created": time.time(), # This is a simplification; ideally preserve creation time
+            "timestamp_last": time.time(),
+            "messages": messages
+        }
+        
+        # If updating existing, preserve key metadata
+        if os.path.exists(filepath):
+            try:
+                with open(filepath, 'r') as f:
+                    existing = json.load(f)
+                    data["timestamp_created"] = existing.get("timestamp_created", data["timestamp_created"])
+                    # Keep original title if it was custom, but here we just auto-update for now
+            except:
+                pass
+                
+        with open(filepath, 'w') as f:
+            json.dump(data, f, indent=2)
+
+    def delete_chat(self, chat_id):
+        """Delete a chat file."""
+        filepath = os.path.join(self.storage_dir, f"{chat_id}.json")
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+
 class OpenVoiceBackend:
     """Backend handling STT, TTS, LLM, and recording."""
     
     def __init__(self, args):
         self.args = args
         self.chat_history = []
+        self.current_chat_id = str(uuid.uuid4())
+        self.chat_manager = ChatManager()
+        self.is_muted = False
+
         
         # Models
         self.stt = None
@@ -369,6 +578,8 @@ class OpenVoiceBackend:
     
     def speak(self, text):
         """Queue text for TTS."""
+        if self.is_muted:
+            return
         if text and text.strip():
             self.tts_queue.put(text)
     
@@ -445,8 +656,32 @@ class OpenVoiceBackend:
         
         if response and not response.startswith("Error"):
             self.chat_history.append({"role": "assistant", "content": response})
+            # Save chat after AI response
+            self.chat_manager.save_chat(self.current_chat_id, self.chat_history)
         
         return response
+    
+    def new_session(self):
+        """Start a new chat session."""
+        self.chat_history = []
+        self.current_chat_id = str(uuid.uuid4())
+        
+    def load_session(self, chat_id):
+        """Load an existing session."""
+        data = self.chat_manager.load_chat(chat_id)
+        if data:
+            self.chat_history = data.get("messages", [])
+            self.current_chat_id = chat_id
+            return self.chat_history
+        return []
+    
+    def delete_session(self, chat_id):
+        """Delete a session."""
+        self.chat_manager.delete_chat(chat_id)
+        if self.current_chat_id == chat_id:
+            self.new_session()
+            return True # Indicates current session was deleted
+        return False
     
     def start_recording(self):
         """Start voice recording."""
@@ -553,43 +788,195 @@ class OpenVoiceBackend:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Textual TUI Application
 # ═══════════════════════════════════════════════════════════════════════════════
+# Textual Widgets
+# ═══════════════════════════════════════════════════════════════════════════════
+class ChatListItem(ListItem):
+    """A list item representing a chat session."""
+    
+    def __init__(self, chat_id, title, timestamp):
+        super().__init__()
+        self.chat_id = chat_id
+        self.title_text = title
+        self.timestamp = timestamp
+        
+    def compose(self) -> ComposeResult:
+        dt = datetime.fromtimestamp(self.timestamp).strftime("%b %d %H:%M")
+        
+        with Horizontal():
+            with Vertical(classes="chat-item-info"):
+                yield Label(self.title_text, classes="chat-item-title")
+                yield Label(dt, classes="chat-item-date")
+                
+            yield Button("X", id=f"del-{self.chat_id}", classes="delete-btn")
+
+
 class OpenVoiceTUI(App):
-    """OpenVoice Voice Assistant TUI."""
+    """OpenCLI Voice Assistant TUI."""
     
     CSS = CSS
     
     BINDINGS = [
         Binding("escape", "quit", "Quit", show=True),
         Binding("ctrl+c", "quit", "Quit", show=False),
+        Binding("ctrl+n", "new_chat", "New Chat", show=True),
+        Binding("ctrl+d", "delete_chat", "Delete Chat", show=True),
     ]
     
     def __init__(self, args, backend=None):
         super().__init__()
         self.args = args
-        self.backend = backend  # Pre-loaded backend
+        self.backend = backend
+        self.title = "OpenCLI"
         self._chat_container = None
         self._current_ai_message = None
         self._pynput_listener = None
+        self._chat_list = None
+    
     
     def compose(self) -> ComposeResult:
         """Create the UI layout."""
-        with Container(id="app-container"):
-            yield Static(OPENVOICE_BANNER, id="header-banner")
-            yield ScrollableContainer(id="chat-container")
-            with Container(id="input-container"):
-                yield Input(placeholder="Type message and press Enter...", id="user-input")
-            yield StatusBar(id="status-bar")
+        yield Container(Label(OPENCLI_BANNER.strip(), id="banner-label"), id="app-header")
+        
+        with Horizontal(id="main-layout"):
+            # Sidebar
+            with Vertical(id="sidebar"):
+                with Container(id="new-chat-container"):
+                    yield Button("New Chat", id="new-chat-btn", variant="success")
+                    yield Button("Mute Audio", id="mute-btn")
+                
+                yield ListView(id="chat-list")
+            
+            # Chat Area
+            with Vertical(id="chat-area"):
+                yield ScrollableContainer(id="chat-container")
+                
+                with Vertical(id="input-area"):
+                    yield Input(placeholder="Type message and press Enter...", id="user-input")
+                    yield StatusBar(id="status-bar")
     
     def on_mount(self):
         """Called when app is mounted."""
         self._chat_container = self.query_one("#chat-container", ScrollableContainer)
+        self._chat_list = self.query_one("#chat-list", ListView)
         self.query_one("#user-input", Input).focus()
         
-        # Start pynput listener for PTT (backend already loaded)
+        # Start pynput listener
         self._start_pynput_listener()
+        
+        if self.backend:
+            # Refresh chat list
+            self._refresh_chat_list()
+            self._add_system_message("Ready! Hold OPTION=voice, CTRL=camera, or type.")
+        else:
+            self._add_system_message("Demo mode - no backend loaded.")
+            
+    def _refresh_chat_list(self):
+        """Reload chat list from backend."""
+        if not self.backend:
+            return
+            
+        self._chat_list.clear()
+        chats = self.backend.chat_manager.list_chats()
+        
+        for chat in chats:
+            item = ChatListItem(chat["id"], chat["title"], chat["timestamp"])
+            self._chat_list.append(item)
     
+    def on_button_pressed(self, event: Button.Pressed):
+        """Handle button presses."""
+        btn_id = str(event.button.id)
+        
+        if btn_id == "new-chat-btn":
+            self.action_new_chat()
+            
+        elif btn_id == "mute-btn":
+            self.action_toggle_mute()
+            
+        elif btn_id.startswith("del-"):
+            # Delete specific chat
+            chat_id = btn_id.replace("del-", "")
+            if self.backend:
+                is_current = self.backend.delete_session(chat_id)
+                if is_current:
+                    self._chat_container.remove_children()
+                    self._add_system_message("Chat deleted. Started new session.")
+                self._refresh_chat_list()
+            event.stop()
+            
+    def on_list_view_selected(self, event: ListView.Selected):
+        """Handle chat selection."""
+        item = event.item
+        if isinstance(item, ChatListItem) and self.backend:
+            self._load_chat(item.chat_id)
+            
+    def _load_chat(self, chat_id):
+        """Load a chat session into the UI."""
+        if not self.backend:
+            return
+            
+        history = self.backend.load_session(chat_id)
+        
+        # Clear UI
+        self._chat_container.remove_children()
+        
+        # Re-populate UI
+        for msg in history:
+            role = msg["role"]
+            content = msg["content"]
+            
+            if role == "user":
+                 # Handle image messages
+                if isinstance(content, list):
+                    text_content = ""
+                    has_image = False
+                    for part in content:
+                        if part.get("type") == "text":
+                            text_content = part.get("text", "")
+                        elif part.get("type") == "image_url":
+                            has_image = True
+                    self._add_user_message(text_content + (" (+image)" if has_image else ""))
+                else:
+                    self._add_user_message(content)
+            elif role == "assistant":
+                self._add_ai_message(content)
+        
+        self.query_one("#user-input", Input).focus()
+
+    def action_new_chat(self):
+        """Start a new chat."""
+        if self.backend:
+            self.backend.new_session()
+            self._chat_container.remove_children()
+            self._add_system_message("New chat started.")
+            self._refresh_chat_list()
+            self.query_one("#user-input", Input).focus()
+
+    def action_delete_chat(self):
+        """Delete current chat (hotkey)."""
+        if not self.backend:
+            return
+        if self._chat_list.index is not None:
+             item = self._chat_list.children[self._chat_list.index]
+             if isinstance(item, ChatListItem):
+                 if self.backend.delete_session(item.chat_id):
+                     self._chat_container.remove_children()
+                 self._refresh_chat_list()
+
+    def action_toggle_mute(self):
+        """Toggle audio mute state."""
+        if self.backend:
+            self.backend.is_muted = not self.backend.is_muted
+            btn = self.query_one("#mute-btn", Button)
+            if self.backend.is_muted:
+                btn.label = "Unmute Audio"
+                btn.add_class("--muted")
+                self._add_system_message("Audio muted.")
+            else:
+                btn.label = "Mute Audio"
+                btn.remove_class("--muted")
+                self._add_system_message("Audio unmuted.")
+
     def _start_pynput_listener(self):
         """Start pynput keyboard listener for PTT."""
         if not HAS_PYNPUT:
@@ -652,6 +1039,7 @@ class OpenVoiceTUI(App):
             
             self.backend.chat(text, on_token=on_token)
             self.call_from_thread(self._finish_ai_response)
+            self.call_from_thread(self._refresh_chat_list)
         else:
             self.call_from_thread(self._add_system_message, "(No speech detected)")
         
@@ -688,6 +1076,7 @@ class OpenVoiceTUI(App):
             
             self.backend.chat(text, image_b64=image_b64, on_token=on_token)
             self.call_from_thread(self._finish_ai_response)
+            self.call_from_thread(self._refresh_chat_list)
         else:
             self.call_from_thread(self._add_system_message, "No image captured")
         
@@ -774,6 +1163,8 @@ class OpenVoiceTUI(App):
         
         self.backend.chat(text, on_token=on_token)
         self.call_from_thread(self._finish_ai_response)
+        self.call_from_thread(self._refresh_chat_list)  # Update list for title change/new chat
+
     
     def action_quit(self):
         """Quit the application."""
