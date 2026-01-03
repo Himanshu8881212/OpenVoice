@@ -14,7 +14,7 @@ A Mac-optimized voice assistant with a modern Textual TUI.
 
 - macOS with Apple Silicon (M1/M2/M3)
 - Python 3.11+
-- LM Studio or compatible LLM server running on localhost:1234
+- **LM Studio (Required)** - You must have [LM Studio](https://lmstudio.ai/) running with a local server enabled on localhost:1234. This provides the LLM reasoning capability.
 
 ## Installation
 

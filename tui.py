@@ -234,6 +234,14 @@ ChatListItem.--highlight {
     background: #30363d;
 }
 
+#mute-btn:hover {
+    background: #30363d;
+}
+
+#mute-btn.--muted:hover {
+    background: #d29922;
+}
+
 /* Main Content Area */
 #chat-area {
     width: 1fr;
