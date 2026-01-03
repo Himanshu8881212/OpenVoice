@@ -296,23 +296,21 @@ ChatListItem.--highlight {
 }
 
 #attach-btn {
-    width: 4;
+    width: 5;
     height: 3;
-    min-width: 4;
+    min-width: 5;
     background: #0d1117;
     border: solid #30363d;
-    border-right: none;
     color: #8b949e;
     padding: 0;
     content-align: center middle;
-    margin: 0;
+    margin-right: 1;
     outline: none;
 }
 
 #attach-btn:focus {
     background: #0d1117;
     border: solid #30363d;
-    border-right: none;
     outline: none;
 }
 
@@ -325,7 +323,6 @@ ChatListItem.--highlight {
     height: 3;
     background: #0d1117;
     border: solid #30363d;
-    border-left: none;
     color: #c9d1d9;
     margin: 0;
     outline: none;
@@ -333,7 +330,6 @@ ChatListItem.--highlight {
 
 #user-input:focus {
     border: solid #30363d;
-    border-left: none;
     background: #0d1117;
     outline: none;
 }
