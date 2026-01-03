@@ -24,6 +24,8 @@ import numpy as np
 # ═══════════════════════════════════════════════════════════════════════════════
 os.environ["TQDM_DISABLE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0"
+os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "1"
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -43,6 +45,7 @@ import requests
 
 try:
     import cv2
+    cv2.ocl.setUseOpenCL(False)
     HAS_OPENCV = True
 except ImportError:
     HAS_OPENCV = False
@@ -170,7 +173,7 @@ Screen {
 
 /* Chat Items */
 ChatListItem {
-    height: 4;
+    height: 3;
     background: #161b22;
     border-bottom: solid #1c2128;
     layout: horizontal;
@@ -246,7 +249,7 @@ ChatListItem.--highlight {
 #chat-container {
     height: 1fr;
     background: #0d1117;
-    padding: 1 4;
+    padding: 1 2;
     overflow-y: auto;
     scrollbar-size: 1 1;
     align: center top;
@@ -288,7 +291,7 @@ ChatListItem.--highlight {
 
 /* Messages */
 .user-message {
-    width: 90%;
+    width: 85%;
     color: #f0f6fc;
     background: #0d47a1;
     padding: 1 2;
@@ -296,7 +299,7 @@ ChatListItem.--highlight {
     margin-bottom: 1;
 }
 .ai-message {
-    width: 90%;
+    width: 85%;
     color: #c9d1d9;
     background: #1c2128;
     padding: 1 2;
@@ -322,7 +325,9 @@ OPENCLI_BANNER = """
 # ═══════════════════════════════════════════════════════════════════════════════
 # Textual Widgets
 # ═══════════════════════════════════════════════════════════════════════════════
-class ChatMessage(Static):
+from textual.widget import Widget
+
+class ChatMessage(Widget):
     """A single chat message widget."""
     
     def __init__(self, sender: str, content: str, msg_type: str = "user"):
@@ -342,7 +347,7 @@ class ChatMessage(Static):
         if not display_content and self.msg_type == "ai":
              return
              
-        yield Static(display_content)
+        yield Static(display_content, id="msg-text")
     
     def update_content(self, new_content: str):
         """Update message content for streaming."""
@@ -352,7 +357,7 @@ class ChatMessage(Static):
             return
             
         try:
-            static = self.query_one(Static)
+            static = self.query_one("#msg-text", Static)
             static.update(display_content)
         except Exception:
             pass
