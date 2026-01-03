@@ -303,6 +303,12 @@ ChatListItem.--highlight {
     margin: 0;
 }
 
+#attach-btn:focus {
+    background: #0d1117;
+    border: solid #30363d;
+    border-right: none;
+}
+
 #attach-btn:hover {
     color: #58a6ff;
 }
@@ -315,6 +321,12 @@ ChatListItem.--highlight {
     border-left: none;
     color: #c9d1d9;
     margin: 0;
+}
+
+#user-input:focus {
+    border: solid #30363d;
+    border-left: none;
+    background: #0d1117;
 }
 
 #status-bar {
