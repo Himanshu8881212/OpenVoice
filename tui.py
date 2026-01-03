@@ -278,7 +278,6 @@ ChatListItem.--highlight {
     margin-bottom: 0;
     display: none;
     content-align: right middle;
-    font-size: 9;
 }
 
 #attachment-label.--visible {
@@ -292,15 +291,16 @@ ChatListItem.--highlight {
 }
 
 #attach-btn {
-    width: 6;
+    width: 4;
     height: 3;
-    min-width: 6;
+    min-width: 4;
     background: #0d1117;
     border: solid #30363d;
     border-right: none;
     color: #8b949e;
     padding: 0;
     content-align: center middle;
+    margin: 0;
 }
 
 #attach-btn:hover {
@@ -312,7 +312,9 @@ ChatListItem.--highlight {
     height: 3;
     background: #0d1117;
     border: solid #30363d;
+    border-left: none;
     color: #c9d1d9;
+    margin: 0;
 }
 
 #status-bar {
