@@ -349,9 +349,8 @@ class ChatMessage(Static):
         self.add_class(f"{msg_type}-message")
 
     def _clean_text(self, text: str) -> str:
-        """Strip performance markers like [laugh] or [clear throat]."""
-        import re
-        return re.sub(r'\[.*?\]', '', text).strip()
+        """Keep original text to show character tags like (laughs)."""
+        return text.strip()
     
     def update_content(self, new_content: str):
         """Update message content for streaming."""
@@ -579,12 +578,21 @@ class OpenVoiceBackend:
             if self.is_recording or self.is_recording_video:
                 self.audio_chunks.append(indata.copy())
     
+    def _clean_for_speech(self, text: str) -> str:
+        """Strip tags like [laugh] from text for TTS. Only square brackets."""
+        import re
+        # Remove only [tag] patterns
+        text = re.sub(r'\[.*?\]', '', text)
+        return text.strip()
+    
     def speak(self, text):
-        """Queue text for TTS."""
+        """Queue text for TTS, cleaning tags first."""
         if self.is_muted:
             return
-        if text and text.strip():
-            self.tts_queue.put(text)
+        
+        speech_text = self._clean_for_speech(text)
+        if speech_text:
+            self.tts_queue.put(speech_text)
     
     def transcribe(self, audio):
         """Speech to text."""
