@@ -106,6 +106,39 @@ def trim_silence_simple(audio, threshold=0.01):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Gesture Normalization for ChatterBox TTS
+# ═══════════════════════════════════════════════════════════════════════════════
+import re
+
+# Mapping of common LLM gesture patterns to ChatterBox tags
+GESTURE_MAP = {
+    r'\(laughs?\)': '[laugh]',
+    r'\*laughs?\*': '[laugh]',
+    r'\(sighs?\)': '[sigh]',
+    r'\*sighs?\*': '[sigh]',
+    r'\(chuckles?\)': '[chuckle]',
+    r'\*chuckles?\*': '[chuckle]',
+    r'\(coughs?\)': '[cough]',
+    r'\*coughs?\*': '[cough]',
+    r'\(sniffs?\)': '[sniff]',
+    r'\*sniffs?\*': '[sniff]',
+    r'\(gasps?\)': '[gasp]',
+    r'\*gasps?\*': '[gasp]',
+    r'\(groans?\)': '[groan]',
+    r'\*groans?\*': '[groan]',
+    r'\(clears? throat\)': '[clear throat]',
+    r'\*clears? throat\*': '[clear throat]',
+}
+
+def normalize_gestures(text: str) -> str:
+    """Convert LLM gesture formats to ChatterBox TTS [tag] format."""
+    result = text
+    for pattern, replacement in GESTURE_MAP.items():
+        result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # CSS Styles
 # ═══════════════════════════════════════════════════════════════════════════════
 CSS = """
@@ -632,11 +665,13 @@ class OpenVoiceBackend:
                 self.audio_chunks.append(indata.copy())
     
     def speak(self, text):
-        """Queue text for TTS."""
+        """Queue text for TTS with gesture normalization."""
         if self.is_muted:
             return
         if text and text.strip():
-            self.tts_queue.put(text)
+            # Normalize gestures for ChatterBox TTS (e.g., (laughs) -> [laugh])
+            normalized_text = normalize_gestures(text)
+            self.tts_queue.put(normalized_text)
     
     def transcribe(self, audio):
         """Speech to text."""
@@ -1068,8 +1103,8 @@ class OpenVoiceTUI(App):
         
         def on_press(key):
             try:
-                # Debugging: show all keys if needed, uncomment next line to see ALL keys
-                # self.call_from_thread(self._add_system_message, f"Key pressed: {key}")
+                # Debugging: Show all keys to verify listener is working
+                self.call_from_thread(self._add_system_message, f"Debug: Key pressed: {key}")
                 
                 if key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
                     if self.backend and self.backend.start_recording():
