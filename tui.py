@@ -242,6 +242,11 @@ ChatListItem.--highlight {
     background: #d29922;
 }
 
+#mute-btn > .textual-button--label, 
+#new-chat-btn > .textual-button--label {
+    background: transparent;
+}
+
 /* Main Content Area */
 #chat-area {
     width: 1fr;
@@ -301,12 +306,14 @@ ChatListItem.--highlight {
     padding: 0;
     content-align: center middle;
     margin: 0;
+    outline: none;
 }
 
 #attach-btn:focus {
     background: #0d1117;
     border: solid #30363d;
     border-right: none;
+    outline: none;
 }
 
 #attach-btn:hover {
@@ -321,12 +328,14 @@ ChatListItem.--highlight {
     border-left: none;
     color: #c9d1d9;
     margin: 0;
+    outline: none;
 }
 
 #user-input:focus {
     border: solid #30363d;
     border-left: none;
     background: #0d1117;
+    outline: none;
 }
 
 #status-bar {
